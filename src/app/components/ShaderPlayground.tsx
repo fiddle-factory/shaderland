@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Pane } from 'tweakpane'
+import { ArrowCounterClockwise } from 'phosphor-react'
 
 // Define types for controls
 interface ControlConfig {
@@ -300,30 +301,20 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Interactive Shader
-          </h3>
-          <div className="flex gap-2">
-            {effectiveConfig && (
-              <span className="text-sm text-gray-500 dark:text-gray-400 px-2 py-1 bg-green-100 dark:bg-green-900/20 rounded">
-                {Object.keys(effectiveConfig).length} control groups
-              </span>
-            )}
-            <button
-              onClick={reloadShader}
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded"
-            >
-              Reload
-            </button>
-          </div>
-        </div>
-      </div>
-
+      {/* Main content area with shader and controls */}
       <div className="flex">
-        {/* Shader Canvas/Iframe */}
-        <div className="flex-1 aspect-square">
+        {/* Shader Canvas/Iframe with reload icon */}
+        <div className="flex-1 aspect-square relative group">
+          {/* Reload Icon Button (appears on hover) */}
+          <button
+            onClick={reloadShader}
+            className="absolute top-3 right-3 z-10 p-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 shadow transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
+            style={{ marginTop: '0px', marginRight: '0px' }}
+            aria-label="Reload Shader"
+            tabIndex={0}
+          >
+            <ArrowCounterClockwise size={22} weight="bold" />
+          </button>
           {loadError ? (
             <div className="w-full h-full flex items-center justify-center bg-red-50 dark:bg-red-900/20">
               <div className="text-center p-4">
@@ -342,7 +333,7 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
           ) : (
             <iframe
               ref={iframeRef}
-              className="w-full h-full border-none"
+              className="w-full h-full border-none rounded"
               sandbox="allow-scripts allow-same-origin"
               referrerPolicy="no-referrer"
               title="Shader Preview"

@@ -71,15 +71,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      {/* Top-left header */}
+      <div className="pt-8 pl-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-left">
+          ShaderLand
+        </h1>
+      </div>
       <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            ShaderLand
-          </h1>
-        </header>
-
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg mb-6">
             <div className="flex gap-4">
               <input
                 type="text"
