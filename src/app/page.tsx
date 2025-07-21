@@ -2,8 +2,11 @@
 
 import { useState } from 'react'
 import ShaderPlayground from './components/ShaderPlayground'
+import { DebugControls } from './components/DebugControls'
+import { useDebug } from './contexts/DebugContext'
 
 export default function Home() {
+  const { selectedModel } = useDebug()
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [shaderData, setShaderData] = useState<{
@@ -18,13 +21,15 @@ export default function Home() {
     setIsLoading(true)
     setError(null)
 
+    const startTime = performance.now()
+
     try {
       const response = await fetch('/api/generate-shader', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, model: selectedModel }),
       })
 
       console.log('=== FRONTEND RESPONSE ===')
@@ -51,8 +56,19 @@ export default function Home() {
       }
 
       console.log('Parsed data keys:', Object.keys(data))
+      
+      const endTime = performance.now()
+      const timeTaken = Math.round(endTime - startTime)
+      
+      console.log(`🚀 Request completed: ${timeTaken}ms using ${selectedModel}`)
+      
       setShaderData(data)
     } catch (err) {
+      const endTime = performance.now()
+      const timeTaken = Math.round(endTime - startTime)
+      
+      console.log(`❌ Request failed: ${timeTaken}ms using ${selectedModel}`)
+      
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setIsLoading(false)
@@ -61,6 +77,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      <DebugControls />
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">

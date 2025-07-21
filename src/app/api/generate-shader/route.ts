@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createMistral } from "@ai-sdk/mistral";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 
 interface ShaderRequest {
   prompt: string;
+  model?: "claude-3-5-sonnet-20241022" | "mistral-small-2503" | "gemini-2.0-flash-exp";
 }
 
 interface ShaderResponse {
@@ -109,7 +112,8 @@ Generate the shader HTML and TweakPane config in the specified format!`;
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt }: ShaderRequest = await req.json();
+    const { prompt, model = "claude-3-5-sonnet-20241022" }: ShaderRequest =
+      await req.json();
 
     if (!prompt) {
       return NextResponse.json(
@@ -118,18 +122,54 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "ANTHROPIC_API_KEY not configured" },
-        { status: 500 }
-      );
+    let aiModel;
+
+    switch (model) {
+      case "claude-3-5-sonnet-20241022":
+        const anthropicKey = process.env.ANTHROPIC_API_KEY;
+        if (!anthropicKey) {
+          return NextResponse.json(
+            { error: "ANTHROPIC_API_KEY not configured" },
+            { status: 500 }
+          );
+        }
+        const anthropic = createAnthropic({ apiKey: anthropicKey });
+        aiModel = anthropic("claude-3-5-sonnet-20241022");
+        break;
+
+      case "mistral-small-2503":
+        const mistralKey = process.env.MISTRAL_API_KEY;
+        if (!mistralKey) {
+          return NextResponse.json(
+            { error: "MISTRAL_API_KEY not configured" },
+            { status: 500 }
+          );
+        }
+        const mistral = createMistral({ apiKey: mistralKey });
+        aiModel = mistral("mistral-small-2503");
+        break;
+
+      case "gemini-2.0-flash-exp":
+        const googleKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+        if (!googleKey) {
+          return NextResponse.json(
+            { error: "GOOGLE_GENERATIVE_AI_API_KEY not configured" },
+            { status: 500 }
+          );
+        }
+        const google = createGoogleGenerativeAI({ apiKey: googleKey });
+        aiModel = google("gemini-2.0-flash-exp");
+        break;
+
+      default:
+        return NextResponse.json(
+          { error: "Unsupported model" },
+          { status: 400 }
+        );
     }
 
-    const anthropic = createAnthropic({ apiKey });
-
     const result = await generateText({
-      model: anthropic("claude-3-5-sonnet-20241022"),
+      model: aiModel,
       prompt: shaderPrompt(prompt),
       maxTokens: 4096,
     });
