@@ -5,13 +5,23 @@ import ShaderPlayground from './components/ShaderPlayground'
 import { DebugControls } from './components/DebugControls'
 import { useDebug } from './contexts/DebugContext'
 
+// Match the ControlConfig type from ShaderPlayground
+interface ControlConfig {
+  value: number | number[] | string | string[]
+  min?: number
+  max?: number
+  step?: number
+  options?: unknown
+  label?: string
+}
+
 export default function Home() {
   const { selectedModel } = useDebug()
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [shaderData, setShaderData] = useState<{
     html: string
-    config?: Record<string, unknown>
+    config?: Record<string, Record<string, ControlConfig>>
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,51 +86,25 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      <DebugControls />
+    <div className="min-h-screen bg-black">
+      {/* Top-left header */}
+      <div className="pt-8 pl-8">
+        <h1 className="text-md font-bold text-gray-900 dark:text-white mb-2 text-left">
+          shaderland
+        </h1>
+      </div>
       <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            ShaderLand
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Generate interactive WebGL shaders with AI
-          </p>
-        </header>
-
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-            <div className="flex gap-4">
-              <input
-                type="text"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe the shader you want to create (e.g., 'a swirling galaxy with adjustable colors')"
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                onKeyDown={(e) => e.key === 'Enter' && generateShader()}
-              />
-              <button
-                onClick={generateShader}
-                disabled={isLoading || !prompt.trim()}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Generating...' : 'Generate'}
-              </button>
-            </div>
-
-            {error && (
-              <div className="mt-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 rounded">
-                {error}
-              </div>
-            )}
-          </div>
-
-          {shaderData && (
-            <ShaderPlayground
-              html={shaderData.html}
-              config={shaderData.config}
-            />
-          )}
+          {/* Removed input, button, and error display. Pass as props to ShaderPlayground. */}
+          <ShaderPlayground 
+            html={shaderData?.html ?? ''}
+            config={shaderData?.config}
+            prompt={prompt}
+            setPrompt={setPrompt}
+            isLoading={isLoading}
+            generateShader={generateShader}
+            error={error}
+          />
         </div>
       </div>
     </div>
