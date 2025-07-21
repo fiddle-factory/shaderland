@@ -12,10 +12,14 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
 	},
 	"dependencies": {
+		"@ai-sdk/anthropic": "^1.0.2",
 		"@opennextjs/cloudflare": "^1.5.2",
+		"ai": "^4.0.28",
 		"next": "15.3.5",
 		"react": "^19.0.0",
-		"react-dom": "^19.0.0"
+		"react-dom": "^19.0.0",
+		"tweakpane": "^4.0.5",
+		"zod": "^4.0.5"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",
