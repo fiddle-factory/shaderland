@@ -3,22 +3,189 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pane } from 'tweakpane'
 
+// Define types for controls
+interface ControlConfig {
+  value: number | number[] | string | string[]
+  min?: number
+  max?: number
+  step?: number
+  options?: unknown
+  label?: string
+}
+
 interface ShaderPlaygroundProps {
   html: string
-  config?: any
+  config?: Record<string, Record<string, ControlConfig>>
 }
+
+// Default shader HTML (orange-purple noisy gradient)
+const defaultShaderHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Default Shader</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #222; }
+    body { display: flex; align-items: center; justify-content: center; height: 100vh; }
+    canvas { width: 100vw; height: 100vh; display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script id="vertShader" type="x-shader/x-vertex">
+    attribute vec2 position;
+    void main() {
+      gl_Position = vec4(position, 0, 1);
+    }
+  </script>
+  <script id="fragShader" type="x-shader/x-fragment">
+    precision highp float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform float u_noise;
+    uniform vec3 u_color1;
+    uniform vec3 u_color2;
+    // Simple 2D noise
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      float a = hash(i);
+      float b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0));
+      float d = hash(i + vec2(1.0, 1.0));
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+    }
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+      float n = noise(uv * 10.0 + u_time * 0.1) * u_noise;
+      vec3 color = mix(u_color1, u_color2, uv.x + n);
+      gl_FragColor = vec4(color, 1.0);
+    }
+  </script>
+  <script>
+    const canvas = document.getElementById('c');
+    const gl = canvas.getContext('webgl');
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+    function createShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      return shader;
+    }
+    const vertSrc = document.getElementById('vertShader').textContent;
+    const fragSrc = document.getElementById('fragShader').textContent;
+    const vertShader = createShader(gl, gl.VERTEX_SHADER, vertSrc);
+    const fragShader = createShader(gl, gl.FRAGMENT_SHADER, fragSrc);
+    const program = gl.createProgram();
+    gl.attachShader(program, vertShader);
+    gl.attachShader(program, fragShader);
+    gl.linkProgram(program);
+    gl.useProgram(program);
+    // Quad
+    const position = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, position);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      -1, -1, 1, -1, -1, 1, 1, 1
+    ]), gl.STATIC_DRAW);
+    const posLoc = gl.getAttribLocation(program, 'position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    // Uniforms
+    const u_time = gl.getUniformLocation(program, 'u_time');
+    const u_res = gl.getUniformLocation(program, 'u_resolution');
+    const u_noise = gl.getUniformLocation(program, 'u_noise');
+    const u_color1 = gl.getUniformLocation(program, 'u_color1');
+    const u_color2 = gl.getUniformLocation(program, 'u_color2');
+    // Helper to convert hex to [r,g,b] 0-1
+    function hexToRgbNorm(hex) {
+      hex = hex.replace('#', '');
+      if (hex.length === 3) hex = hex.split('').map(x => x + x).join('');
+      const num = parseInt(hex, 16);
+      return [
+        ((num >> 16) & 255) / 255,
+        ((num >> 8) & 255) / 255,
+        (num & 255) / 255
+      ];
+    }
+    // Default params
+    let params = {
+      noise: 0.2,
+      color1: '#ff8000', // orange
+      color2: '#8000ff', // purple
+    };
+    // Listen for param updates
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'UPDATE_PARAMS') {
+        if (e.data.params.noise !== undefined) params.noise = e.data.params.noise;
+        if (e.data.params.color1 !== undefined) params.color1 = e.data.params.color1;
+        if (e.data.params.color2 !== undefined) params.color2 = e.data.params.color2;
+      }
+    });
+    function render(time) {
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.uniform1f(u_time, time * 0.001);
+      gl.uniform2f(u_res, gl.drawingBufferWidth, gl.drawingBufferHeight);
+      gl.uniform1f(u_noise, params.noise);
+      gl.uniform3fv(u_color1, hexToRgbNorm(params.color1));
+      gl.uniform3fv(u_color2, hexToRgbNorm(params.color2));
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      requestAnimationFrame(render);
+    }
+    render(0);
+  </script>
+</body>
+</html>`;
+
+// Default controls config for the default shader
+const defaultControlsConfig = {
+  'Gradient': {
+    color1: {
+      value: '#ff8000', // orange
+      label: 'Color 1',
+      options: undefined,
+    },
+    color2: {
+      value: '#8000ff', // purple
+      label: 'Color 2',
+      options: undefined,
+    },
+  },
+  'Noise': {
+    noise: {
+      value: 0.2,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      label: 'Noise Amount',
+    },
+  },
+};
 
 export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const controlsRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<Pane | null>(null)
-  const paramsRef = useRef<Record<string, any>>({})
+  const paramsRef = useRef<Record<string, number | number[] | string | string[]>>({})
   const [loadError, setLoadError] = useState(false)
   const [isReady, setIsReady] = useState(false)
 
+  // Use defaults if html/config are not provided or empty
+  const effectiveHtml = html && html.trim() ? html : defaultShaderHtml;
+  const effectiveConfig = config || defaultControlsConfig;
+
   // Initialize TweakPane controls
   useEffect(() => {
-    if (!config || !controlsRef.current) return
+    if (!effectiveConfig || !controlsRef.current) return
 
     // Cleanup existing pane
     if (paneRef.current) {
@@ -34,18 +201,19 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
     paneRef.current = pane
 
     // Initialize parameters with default values
-    Object.entries(config).forEach(([folderName, controls]: [string, any]) => {
+    Object.entries(effectiveConfig).forEach(([folderName, controls]) => {
       const folder = pane.addFolder({ title: folderName, expanded: true })
 
-      Object.entries(controls).forEach(([paramName, controlConfig]: [string, any]) => {
-        paramsRef.current[paramName] = controlConfig.value
+      Object.entries(controls as Record<string, ControlConfig>).forEach(([paramName, controlConfig]) => {
+        const cfg = controlConfig as ControlConfig
+        paramsRef.current[paramName] = cfg.value
 
         folder
           .addBinding(paramsRef.current, paramName, {
-            ...(controlConfig.min !== undefined && { min: controlConfig.min }),
-            ...(controlConfig.max !== undefined && { max: controlConfig.max }),
-            ...(controlConfig.step !== undefined && { step: controlConfig.step }),
-            ...(controlConfig.options && { options: controlConfig.options }),
+            ...(cfg.min !== undefined && { min: cfg.min }),
+            ...(cfg.max !== undefined && { max: cfg.max }),
+            ...(cfg.step !== undefined && { step: cfg.step }),
+            ...(typeof cfg.options === 'object' && cfg.options !== null ? { options: cfg.options } : {}),
             label: paramName
           })
           .on('change', () => {
@@ -60,7 +228,7 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
         paneRef.current = null
       }
     }
-  }, [config])
+  }, [effectiveConfig])
 
   // Send parameter updates to shader
   const sendParamsUpdate = () => {
@@ -74,10 +242,10 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
 
   // Initialize shader
   useEffect(() => {
-    if (!iframeRef.current || !html) return
+    if (!iframeRef.current || !effectiveHtml) return
 
     // Create a blob URL for the HTML content
-    const blob = new Blob([html], { type: 'text/html' })
+    const blob = new Blob([effectiveHtml], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
 
     setLoadError(false)
@@ -116,11 +284,11 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
         iframeRef.current.removeEventListener('error', handleError)
       }
     }
-  }, [html])
+  }, [effectiveHtml])
 
   const reloadShader = () => {
-    if (iframeRef.current && html) {
-      const blob = new Blob([html], { type: 'text/html' })
+    if (iframeRef.current && effectiveHtml) {
+      const blob = new Blob([effectiveHtml], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
       iframeRef.current.src = url
       setTimeout(() => {
@@ -138,9 +306,9 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
             Interactive Shader
           </h3>
           <div className="flex gap-2">
-            {config && (
+            {effectiveConfig && (
               <span className="text-sm text-gray-500 dark:text-gray-400 px-2 py-1 bg-green-100 dark:bg-green-900/20 rounded">
-                {Object.keys(config).length} control groups
+                {Object.keys(effectiveConfig).length} control groups
               </span>
             )}
             <button
@@ -183,7 +351,7 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
         </div>
 
         {/* TweakPane Controls */}
-        {config && (
+        {effectiveConfig && (
           <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
             <div className="p-4">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">

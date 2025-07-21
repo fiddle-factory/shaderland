@@ -3,12 +3,22 @@
 import { useState } from 'react'
 import ShaderPlayground from './components/ShaderPlayground'
 
+// Match the ControlConfig type from ShaderPlayground
+interface ControlConfig {
+  value: number | number[] | string | string[]
+  min?: number
+  max?: number
+  step?: number
+  options?: unknown
+  label?: string
+}
+
 export default function Home() {
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [shaderData, setShaderData] = useState<{
     html: string
-    config?: any
+    config?: Record<string, Record<string, ControlConfig>>
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -63,12 +73,9 @@ export default function Home() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             ShaderLand
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Generate interactive WebGL shaders with AI
-          </p>
         </header>
 
         <div className="max-w-4xl mx-auto">
@@ -98,13 +105,10 @@ export default function Home() {
             )}
           </div>
 
-          {shaderData && (
-            <ShaderPlayground 
-              html={shaderData.html}
-              config={shaderData.config}
-              renderMode="iframe"
-            />
-          )}
+          <ShaderPlayground 
+            html={shaderData?.html ?? ''}
+            config={shaderData?.config}
+          />
         </div>
       </div>
     </div>
