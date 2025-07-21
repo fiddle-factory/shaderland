@@ -17,6 +17,11 @@ interface ControlConfig {
 interface ShaderPlaygroundProps {
   html: string
   config?: Record<string, Record<string, ControlConfig>>
+  prompt: string
+  setPrompt: (v: string) => void
+  isLoading: boolean
+  generateShader: () => void
+  error?: string | null
 }
 
 // Default shader HTML (orange-purple noisy gradient)
@@ -44,6 +49,7 @@ const defaultShaderHtml = `<!DOCTYPE html>
     uniform float u_time;
     uniform vec2 u_resolution;
     uniform float u_noise;
+    uniform float u_speed;
     uniform vec3 u_color1;
     uniform vec3 u_color2;
     // Simple 2D noise
@@ -62,8 +68,13 @@ const defaultShaderHtml = `<!DOCTYPE html>
     }
     void main() {
       vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-      float n = noise(uv * 10.0 + u_time * 0.1) * u_noise;
-      vec3 color = mix(u_color1, u_color2, uv.x + n);
+      // Animate the noise field with time and swirl
+      float angle = u_time * u_speed * 0.2 + uv.x * 6.2831;
+      vec2 swirl = uv + 0.15 * vec2(cos(angle), sin(angle));
+      float n = noise(swirl * 12.0 + u_time * u_speed * 0.7) * 0.7 * u_noise;
+      float n2 = noise(swirl * 24.0 - u_time * u_speed * 0.3) * 0.3 * u_noise;
+      float noisyMix = clamp(uv.x + n + n2, 0.0, 1.0);
+      vec3 color = mix(u_color1, u_color2, noisyMix);
       gl_FragColor = vec4(color, 1.0);
     }
   </script>
@@ -107,6 +118,7 @@ const defaultShaderHtml = `<!DOCTYPE html>
     const u_noise = gl.getUniformLocation(program, 'u_noise');
     const u_color1 = gl.getUniformLocation(program, 'u_color1');
     const u_color2 = gl.getUniformLocation(program, 'u_color2');
+    const u_speed = gl.getUniformLocation(program, 'u_speed');
     // Helper to convert hex to [r,g,b] 0-1
     function hexToRgbNorm(hex) {
       hex = hex.replace('#', '');
@@ -121,6 +133,7 @@ const defaultShaderHtml = `<!DOCTYPE html>
     // Default params
     let params = {
       noise: 0.2,
+      speed: 1.0,
       color1: '#ff8000', // orange
       color2: '#8000ff', // purple
     };
@@ -128,6 +141,7 @@ const defaultShaderHtml = `<!DOCTYPE html>
     window.addEventListener('message', (e) => {
       if (e.data && e.data.type === 'UPDATE_PARAMS') {
         if (e.data.params.noise !== undefined) params.noise = e.data.params.noise;
+        if (e.data.params.speed !== undefined) params.speed = e.data.params.speed;
         if (e.data.params.color1 !== undefined) params.color1 = e.data.params.color1;
         if (e.data.params.color2 !== undefined) params.color2 = e.data.params.color2;
       }
@@ -137,6 +151,7 @@ const defaultShaderHtml = `<!DOCTYPE html>
       gl.uniform1f(u_time, time * 0.001);
       gl.uniform2f(u_res, gl.drawingBufferWidth, gl.drawingBufferHeight);
       gl.uniform1f(u_noise, params.noise);
+      gl.uniform1f(u_speed, params.speed);
       gl.uniform3fv(u_color1, hexToRgbNorm(params.color1));
       gl.uniform3fv(u_color2, hexToRgbNorm(params.color2));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -169,10 +184,17 @@ const defaultControlsConfig = {
       step: 0.01,
       label: 'Noise Amount',
     },
+    speed: {
+      value: 1.0,
+      min: 0.1,
+      max: 3.0,
+      step: 0.01,
+      label: 'Speed',
+    },
   },
 };
 
-export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps) {
+export default function ShaderPlayground({ html, config, prompt, setPrompt, isLoading, generateShader, error }: ShaderPlaygroundProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const controlsRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<Pane | null>(null)
@@ -341,10 +363,40 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
           )}
         </div>
 
-        {/* TweakPane Controls */}
+        {/* TweakPane Controls and input */}
         {effectiveConfig && (
-          <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <div className="w-80 bg-zinc-900 flex flex-col">
+            {/* Input and button above controls */}
             <div className="p-4">
+              <div className="flex items-center bg-white/5 rounded-sm overflow-hidden px-2">
+                <input
+                  type="text"
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  placeholder="Describe the shader you want to create (e.g., 'a swirling galaxy with adjustable colors')"
+                  className="flex-1 py-2 bg-transparent border-none outline-none text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                  onKeyDown={e => e.key === 'Enter' && generateShader()}
+                />
+                {prompt.trim() && (
+                  <button
+                    onClick={generateShader}
+                    disabled={isLoading}
+                    className="h-full px-2 py-1 bg-white/10 hover:bg-white/20 
+                    disabled:opacity-50 disabled:cursor-not-allowed rounded-none rounded-r-sm 
+                    flex items-center justify-center text-xs"
+                    aria-label="Generate Shader"
+                  >
+                    ↵
+                  </button>
+                )}
+              </div>
+              {error && (
+                <div className="mt-2 p-2 bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 rounded text-sm">
+                  {error}
+                </div>
+              )}
+            </div>
+            <div className="p-4 flex-1 overflow-auto">
               <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
                 Controls
               </h4>
