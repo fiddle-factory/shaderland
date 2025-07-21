@@ -8,16 +8,16 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [shaderData, setShaderData] = useState<{
     html: string
-    config?: any
+    config?: Record<string, unknown>
   } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const generateShader = async () => {
     if (!prompt.trim()) return
-    
+
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const response = await fetch('/api/generate-shader', {
         method: 'POST',
@@ -26,17 +26,17 @@ export default function Home() {
         },
         body: JSON.stringify({ prompt }),
       })
-      
+
       console.log('=== FRONTEND RESPONSE ===')
       console.log('Response status:', response.status)
       console.log('Response headers:', Object.fromEntries(response.headers.entries()))
-      
+
       const responseText = await response.text()
       console.log('Raw response length:', responseText.length)
       console.log('Raw response first 200 chars:', responseText.substring(0, 200))
       console.log('Is JSON?', responseText.startsWith('{'))
       console.log('=== END FRONTEND RESPONSE ===')
-      
+
       let data
       try {
         data = JSON.parse(responseText)
@@ -45,11 +45,11 @@ export default function Home() {
         console.log('Failed to parse:', responseText.substring(0, 500))
         throw new Error('Invalid JSON response from server')
       }
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate shader')
       }
-      
+
       console.log('Parsed data keys:', Object.keys(data))
       setShaderData(data)
     } catch (err) {
@@ -90,7 +90,7 @@ export default function Home() {
                 {isLoading ? 'Generating...' : 'Generate'}
               </button>
             </div>
-            
+
             {error && (
               <div className="mt-4 p-3 bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 rounded">
                 {error}
@@ -99,10 +99,9 @@ export default function Home() {
           </div>
 
           {shaderData && (
-            <ShaderPlayground 
+            <ShaderPlayground
               html={shaderData.html}
               config={shaderData.config}
-              renderMode="iframe"
             />
           )}
         </div>

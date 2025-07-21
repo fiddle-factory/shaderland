@@ -8,8 +8,7 @@ interface ShaderRequest {
 
 interface ShaderResponse {
   html: string;
-  config: any;
-  error?: string;
+  config: Record<string, unknown>;
 }
 
 const shaderPrompt = (
@@ -178,7 +177,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       html,
       config: tweakpaneConfig,
-    });
+    } as ShaderResponse);
   } catch (error) {
     console.error("Shader generation error:", error);
     return NextResponse.json(

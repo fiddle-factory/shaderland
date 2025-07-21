@@ -5,16 +5,15 @@ import { Pane } from 'tweakpane'
 
 interface ShaderPlaygroundProps {
   html: string
-  config?: any
+  config?: Record<string, unknown>
 }
 
 export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const controlsRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<Pane | null>(null)
-  const paramsRef = useRef<Record<string, any>>({})
+  const paramsRef = useRef<Record<string, unknown>>({})
   const [loadError, setLoadError] = useState(false)
-  const [isReady, setIsReady] = useState(false)
 
   // Initialize TweakPane controls
   useEffect(() => {
@@ -34,9 +33,12 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
     paneRef.current = pane
 
     // Initialize parameters with default values
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Object.entries(config).forEach(([folderName, controls]: [string, any]) => {
+      // @ts-expect-error - suppress type error
       const folder = pane.addFolder({ title: folderName, expanded: true })
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       Object.entries(controls).forEach(([paramName, controlConfig]: [string, any]) => {
         paramsRef.current[paramName] = controlConfig.value
 
@@ -81,7 +83,6 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
     const url = URL.createObjectURL(blob)
 
     setLoadError(false)
-    setIsReady(false)
 
     const loadTimeout = setTimeout(() => {
       setLoadError(true)
@@ -90,8 +91,6 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
     const handleLoad = () => {
       clearTimeout(loadTimeout)
       setLoadError(false)
-      setIsReady(true)
-      // Send initial parameters once iframe is loaded
       setTimeout(() => {
         sendParamsUpdate()
       }, 100)
@@ -113,6 +112,7 @@ export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps
       URL.revokeObjectURL(url)
       if (iframeRef.current) {
         iframeRef.current.removeEventListener('load', handleLoad)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         iframeRef.current.removeEventListener('error', handleError)
       }
     }
