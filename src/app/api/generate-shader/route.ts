@@ -1,18 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createAnthropic } from '@ai-sdk/anthropic'
-import { generateText } from 'ai'
+import { NextRequest, NextResponse } from "next/server";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { generateText } from "ai";
 
 interface ShaderRequest {
-  prompt: string
+  prompt: string;
 }
 
 interface ShaderResponse {
-  html: string
-  config: any
-  error?: string
+  html: string;
+  config: any;
+  error?: string;
 }
 
-const shaderPrompt = (userPrompt: string) => `You are an expert WebGL fragment shader programmer. Your task is to generate shader content based on the user's request.
+const shaderPrompt = (
+  userPrompt: string
+) => `You are an expert WebGL fragment shader programmer. Your task is to generate shader content based on the user's request.
 
 IMPORTANT: You must return your response in this EXACT format:
 
@@ -35,6 +37,7 @@ IMPORTANT: You must return your response in this EXACT format:
 - Animation loop using requestAnimationFrame
 
 ### Shader Requirements:
+- Always use WebGL 2.0
 - Use WebGL fragment shader with gl_FragCoord for pixel coordinates
 - Always include: uniform float u_time; uniform vec2 u_resolution;
 - Add custom uniforms for user-controllable parameters
@@ -103,68 +106,87 @@ Return a JSON object with this structure:
 ## User Request: 
 ${userPrompt}
 
-Generate the shader HTML and TweakPane config in the specified format!`
+Generate the shader HTML and TweakPane config in the specified format!`;
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt }: ShaderRequest = await req.json()
-    
+    const { prompt }: ShaderRequest = await req.json();
+
     if (!prompt) {
-      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: "Prompt is required" },
+        { status: 400 }
+      );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })
+      return NextResponse.json(
+        { error: "ANTHROPIC_API_KEY not configured" },
+        { status: 500 }
+      );
     }
 
-    const anthropic = createAnthropic({ apiKey })
-    
+    const anthropic = createAnthropic({ apiKey });
+
     const result = await generateText({
-      model: anthropic('claude-3-5-sonnet-20241022'),
+      model: anthropic("claude-3-5-sonnet-20241022"),
       prompt: shaderPrompt(prompt),
       maxTokens: 4096,
-    })
+    });
 
     // Parse the structured response
-    const htmlMatch = result.text.match(/<SHADER_HTML>([\s\S]*?)<\/SHADER_HTML>/)
-    const configMatch = result.text.match(/<TWEAKPANE_CONFIG>([\s\S]*?)<\/TWEAKPANE_CONFIG>/)
-    
+    const htmlMatch = result.text.match(
+      /<SHADER_HTML>([\s\S]*?)<\/SHADER_HTML>/
+    );
+    const configMatch = result.text.match(
+      /<TWEAKPANE_CONFIG>([\s\S]*?)<\/TWEAKPANE_CONFIG>/
+    );
+
     if (!htmlMatch || !configMatch) {
-      console.error('Failed to parse structured response')
-      console.log('Raw response:', result.text)
-      return NextResponse.json({ 
-        error: 'Invalid response format from AI model' 
-      }, { status: 500 })
+      console.error("Failed to parse structured response");
+      console.log("Raw response:", result.text);
+      return NextResponse.json(
+        {
+          error: "Invalid response format from AI model",
+        },
+        { status: 500 }
+      );
     }
-    
-    let tweakpaneConfig
+
+    let tweakpaneConfig;
     try {
-      tweakpaneConfig = JSON.parse(configMatch[1].trim())
+      tweakpaneConfig = JSON.parse(configMatch[1].trim());
     } catch (configError) {
-      console.error('Failed to parse TweakPane config:', configError)
-      console.log('Config text:', configMatch[1])
-      return NextResponse.json({ 
-        error: 'Invalid TweakPane configuration format' 
-      }, { status: 500 })
+      console.error("Failed to parse TweakPane config:", configError);
+      console.log("Config text:", configMatch[1]);
+      return NextResponse.json(
+        {
+          error: "Invalid TweakPane configuration format",
+        },
+        { status: 500 }
+      );
     }
-    
-    const html = htmlMatch[1].trim()
-    
-    console.log('=== PARSED RESPONSE ===')
-    console.log('HTML length:', html.length)
-    console.log('Config keys:', Object.keys(tweakpaneConfig))
-    console.log('=== END PARSED RESPONSE ===')
-    
+
+    const html = htmlMatch[1].trim();
+
+    console.log("=== PARSED RESPONSE ===");
+    console.log("HTML length:", html.length);
+    console.log("Config keys:", Object.keys(tweakpaneConfig));
+    console.log("=== END PARSED RESPONSE ===");
+
     return NextResponse.json({
       html,
-      config: tweakpaneConfig
-    })
-
+      config: tweakpaneConfig,
+    });
   } catch (error) {
-    console.error('Shader generation error:', error)
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
-    }, { status: 500 })
+    console.error("Shader generation error:", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      },
+      { status: 500 }
+    );
   }
 }

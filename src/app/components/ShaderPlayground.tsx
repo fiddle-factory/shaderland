@@ -6,12 +6,10 @@ import { Pane } from 'tweakpane'
 interface ShaderPlaygroundProps {
   html: string
   config?: any
-  renderMode?: 'iframe' | 'canvas'
 }
 
-export default function ShaderPlayground({ html, config, renderMode = 'iframe' }: ShaderPlaygroundProps) {
+export default function ShaderPlayground({ html, config }: ShaderPlaygroundProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const controlsRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<Pane | null>(null)
   const paramsRef = useRef<Record<string, any>>({})
@@ -21,27 +19,27 @@ export default function ShaderPlayground({ html, config, renderMode = 'iframe' }
   // Initialize TweakPane controls
   useEffect(() => {
     if (!config || !controlsRef.current) return
-    
+
     // Cleanup existing pane
     if (paneRef.current) {
       paneRef.current.dispose()
     }
-    
+
     // Create new pane
     const pane = new Pane({
       container: controlsRef.current,
       title: 'Shader Controls'
     })
-    
+
     paneRef.current = pane
-    
+
     // Initialize parameters with default values
     Object.entries(config).forEach(([folderName, controls]: [string, any]) => {
       const folder = pane.addFolder({ title: folderName, expanded: true })
-      
+
       Object.entries(controls).forEach(([paramName, controlConfig]: [string, any]) => {
         paramsRef.current[paramName] = controlConfig.value
-        
+
         folder
           .addBinding(paramsRef.current, paramName, {
             ...(controlConfig.min !== undefined && { min: controlConfig.min }),
@@ -55,7 +53,7 @@ export default function ShaderPlayground({ html, config, renderMode = 'iframe' }
           })
       })
     })
-    
+
     return () => {
       if (paneRef.current) {
         paneRef.current.dispose()
@@ -63,29 +61,28 @@ export default function ShaderPlayground({ html, config, renderMode = 'iframe' }
       }
     }
   }, [config])
-  
+
   // Send parameter updates to shader
   const sendParamsUpdate = () => {
-    if (renderMode === 'iframe' && iframeRef.current?.contentWindow) {
+    if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({
         type: 'UPDATE_PARAMS',
         params: paramsRef.current
       }, '*')
     }
-    // For canvas mode, we'd directly update the WebGL context
   }
 
-  // Initialize shader (iframe mode)
+  // Initialize shader
   useEffect(() => {
-    if (renderMode !== 'iframe' || !iframeRef.current || !html) return
-    
+    if (!iframeRef.current || !html) return
+
     // Create a blob URL for the HTML content
     const blob = new Blob([html], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
-    
+
     setLoadError(false)
     setIsReady(false)
-    
+
     const loadTimeout = setTimeout(() => {
       setLoadError(true)
     }, 10000)
@@ -107,7 +104,7 @@ export default function ShaderPlayground({ html, config, renderMode = 'iframe' }
 
     iframeRef.current.addEventListener('load', handleLoad)
     iframeRef.current.addEventListener('error', handleError)
-    
+
     // Set the iframe src to the blob URL
     iframeRef.current.src = url
 
@@ -119,10 +116,10 @@ export default function ShaderPlayground({ html, config, renderMode = 'iframe' }
         iframeRef.current.removeEventListener('error', handleError)
       }
     }
-  }, [html, renderMode])
+  }, [html])
 
   const reloadShader = () => {
-    if (renderMode === 'iframe' && iframeRef.current && html) {
+    if (iframeRef.current && html) {
       const blob = new Blob([html], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
       iframeRef.current.src = url
@@ -155,7 +152,7 @@ export default function ShaderPlayground({ html, config, renderMode = 'iframe' }
           </div>
         </div>
       </div>
-      
+
       <div className="flex">
         {/* Shader Canvas/Iframe */}
         <div className="flex-1 aspect-square">
@@ -174,7 +171,7 @@ export default function ShaderPlayground({ html, config, renderMode = 'iframe' }
                 </button>
               </div>
             </div>
-          ) : renderMode === 'iframe' ? (
+          ) : (
             <iframe
               ref={iframeRef}
               className="w-full h-full border-none"
@@ -182,14 +179,9 @@ export default function ShaderPlayground({ html, config, renderMode = 'iframe' }
               referrerPolicy="no-referrer"
               title="Shader Preview"
             />
-          ) : (
-            <canvas
-              ref={canvasRef}
-              className="w-full h-full border-none"
-            />
           )}
         </div>
-        
+
         {/* TweakPane Controls */}
         {config && (
           <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
