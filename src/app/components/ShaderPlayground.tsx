@@ -327,12 +327,12 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
           {/* Reload Icon Button (appears on hover) */}
           <button
             onClick={reloadShader}
-            className="absolute top-3 right-3 z-10 p-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 shadow transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
+            className="absolute top-3 right-3 z-10 p-2 rounded bg-white/10 hover:bg-white/20 text-white shadow transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
             style={{ marginTop: '0px', marginRight: '0px' }}
             aria-label="Reload Shader"
             tabIndex={0}
           >
-            <ArrowCounterClockwise size={22} weight="bold" />
+            <ArrowCounterClockwise size={16} weight="bold" />
           </button>
           {loadError ? (
             <div className="w-full h-full flex items-center justify-center bg-red-50 dark:bg-red-900/20">
