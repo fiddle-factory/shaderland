@@ -93,6 +93,7 @@ export default function Home() {
           shaderland
         </h1>
       </div>
+      <DebugControls/>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Removed input, button, and error display. Pass as props to ShaderPlayground. */}

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pane } from 'tweakpane'
 import { ArrowCounterClockwise } from 'phosphor-react'
+import { motion } from 'framer-motion'
 
 // Define types for controls
 interface ControlConfig {
@@ -319,7 +320,24 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+    <motion.div 
+      className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
+      initial={{ 
+        opacity: 0, 
+        y: 50, 
+        filter: 'blur(10px)' 
+      }}
+      animate={{ 
+        opacity: 1, 
+        y: 0, 
+        filter: 'blur(0px)' 
+      }}
+      transition={{ 
+        duration: 0.8, 
+        ease: [0.25, 0.46, 0.45, 0.94],
+        delay: 0.2
+      }}
+    >
       {/* Main content area with shader and controls */}
       <div className="flex">
         {/* Shader Canvas/Iframe with reload icon */}
@@ -327,7 +345,10 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
           {/* Reload Icon Button (appears on hover) */}
           <button
             onClick={reloadShader}
-            className="absolute top-3 right-3 z-10 p-2 rounded bg-white/10 hover:bg-white/20 text-white shadow transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100"
+            className="absolute top-3 right-3 z-10 p-2 rounded bg-white/10 hover:bg-white/20 text-white shadow 
+                     opacity-0 group-hover:opacity-100 focus:opacity-100 
+                     transform scale-75 group-hover:scale-100 focus:scale-100
+                     transition-all duration-300 ease-in-out"
             style={{ marginTop: '0px', marginRight: '0px' }}
             aria-label="Reload Shader"
             tabIndex={0}
@@ -402,6 +423,6 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }
