@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(bun i:*)",
-      "Bash(bun add:*)"
+      "Bash(bun add:*)",
+      "Bash(bun remove:*)"
     ],
     "deny": []
   }

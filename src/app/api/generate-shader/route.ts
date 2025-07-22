@@ -3,10 +3,14 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createMistral } from "@ai-sdk/mistral";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
+import { insertShader } from "../../db";
 
 interface ShaderRequest {
   prompt: string;
   model?: "claude-3-5-sonnet-20241022" | "mistral-small-2503" | "gemini-2.0-flash-exp";
+  creator_id: string;
+  parent_id?: string;
+  lineage_id?: string;
 }
 
 interface ShaderResponse {
@@ -112,12 +116,19 @@ Generate the shader HTML and TweakPane config in the specified format!`;
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, model = "claude-3-5-sonnet-20241022" }: ShaderRequest =
+    const { prompt, model = "claude-3-5-sonnet-20241022", creator_id, parent_id, lineage_id }: ShaderRequest =
       await req.json();
 
     if (!prompt) {
       return NextResponse.json(
         { error: "Prompt is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!creator_id) {
+      return NextResponse.json(
+        { error: "Creator ID is required" },
         { status: 400 }
       );
     }
@@ -213,6 +224,17 @@ export async function POST(req: NextRequest) {
     console.log("HTML length:", html.length);
     console.log("Config keys:", Object.keys(tweakpaneConfig));
     console.log("=== END PARSED RESPONSE ===");
+
+    // Insert shader into database
+    const shaderId = await insertShader({
+      creator_id,
+      lineage_id,
+      parent_id,
+      html,
+      json: tweakpaneConfig,
+    });
+
+    console.log("Shader saved to database with ID:", shaderId);
 
     return NextResponse.json({
       html,

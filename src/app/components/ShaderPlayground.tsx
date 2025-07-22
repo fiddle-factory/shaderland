@@ -225,23 +225,36 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
 
     // Initialize parameters with default values
     Object.entries(effectiveConfig).forEach(([folderName, controls]) => {
+      // @ts-expect-error - suppress type error
       const folder = pane.addFolder({ title: folderName, expanded: true })
 
       Object.entries(controls as Record<string, ControlConfig>).forEach(([paramName, controlConfig]) => {
-        const cfg = controlConfig as ControlConfig
-        paramsRef.current[paramName] = cfg.value
+        try {
+          const cfg = controlConfig as ControlConfig
+          
+          // Validate that the control config has a valid value
+          if (cfg.value === undefined || cfg.value === null) {
+            console.warn(`Skipping control ${paramName} with invalid value:`, cfg.value);
+            return;
+          }
+          
+          paramsRef.current[paramName] = cfg.value
 
-        folder
-          .addBinding(paramsRef.current, paramName, {
-            ...(cfg.min !== undefined && { min: cfg.min }),
-            ...(cfg.max !== undefined && { max: cfg.max }),
-            ...(cfg.step !== undefined && { step: cfg.step }),
-            ...(typeof cfg.options === 'object' && cfg.options !== null ? { options: cfg.options } : {}),
-            label: paramName
-          })
-          .on('change', () => {
-            sendParamsUpdate()
-          })
+          folder
+            .addBinding(paramsRef.current, paramName, {
+              ...(cfg.min !== undefined && { min: cfg.min }),
+              ...(cfg.max !== undefined && { max: cfg.max }),
+              ...(cfg.step !== undefined && { step: cfg.step }),
+              ...(typeof cfg.options === 'object' && cfg.options !== null ? { options: cfg.options } : {}),
+              label: paramName
+            })
+            .on('change', () => {
+              sendParamsUpdate()
+            })
+        } catch (error) {
+          console.error(`Failed to create TweakPane binding for ${paramName}:`, error);
+          console.log('Control config:', controlConfig);
+        }
       })
     })
 
