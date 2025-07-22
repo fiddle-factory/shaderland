@@ -14,12 +14,10 @@ export function ShaderPreview({ html, onClick, className = '' }: ShaderPreviewPr
   useEffect(() => {
     if (iframeRef.current && html) {
       const iframe = iframeRef.current;
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (doc) {
-        doc.open();
-        doc.write(html);
-        doc.close();
-      }
+      
+      // Use data URL approach to avoid variable conflicts
+      const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+      iframe.src = dataUrl;
     }
   }, [html]);
 
