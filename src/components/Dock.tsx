@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import DockItem from "./DockItem";
-import { DockButton } from "../types";
+import { DockButton } from "@/types";
 
 interface Props {
   items: DockButton[];
