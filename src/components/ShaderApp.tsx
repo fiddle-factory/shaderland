@@ -47,6 +47,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
   const [error, setError] = useState<string | null>(null)
   const [recentShaders, setRecentShaders] = useState<RecentShader[]>([])
   const [shareButtonState, setShareButtonState] = useState<'idle' | 'copied'>('idle')
+  const [showDock, setShowDock] = useState(true);
 
   // Get current shader ID from URL for sharing
   const getCurrentShaderId = () => {
@@ -137,7 +138,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
     if (!userId) return;
 
     try {
-      const response = await fetch(`/api/recent-shaders?limit=12`);
+      const response = await fetch(`/api/recent-shaders?limit=30`);
       if (response.ok) {
         const data = await response.json() as { shaders: RecentShader[] };
         setRecentShaders(data.shaders || []);
@@ -199,22 +200,58 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
         </div>
       </div>
       <DebugControls />
-      {/* Dock with shader previews */}
-      <div className = "App">
-        <Dock
-          items={recentShaders.map(shader => ({
-            icon: (
-              <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 8, background: '#222' }}>
-                <iframe
-                  srcDoc={shader.html}
-                  style={{ width: '100%', height: '100%', border: 'none' }}
-                  title="Shader Preview"
-                />
-              </div>
-            ),
-            action: () => loadShader(shader)
-          }))}
+      {/* Dock Notch and Dock at bottom */}
+      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 24, zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
+        {/* Notch */}
+        <div
+          onClick={() => setShowDock(v => !v)}
+          style={{
+            width: 48,
+            height: 8,
+            borderRadius: 4,
+            background: '#888',
+            marginBottom: showDock ? 8 : 0,
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+            pointerEvents: 'auto',
+            transition: 'background 0.2s',
+            opacity: 0.8
+          }}
+          title={showDock ? 'Hide dock' : 'Show dock'}
         />
+        {/* Dock */}
+        {showDock && (
+          <div className="App" style={{ pointerEvents: 'auto' }}>
+            <Dock
+              items={recentShaders.map(shader => ({
+                icon: (
+                  <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', borderRadius: 8, background: 'transparent' }}>
+                    <iframe
+                      srcDoc={shader.html}
+                      style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'none' /* disables interaction until selected */ }}
+                      title="Shader Preview"
+                    />
+                    <button
+                      onClick={() => loadShader(shader)}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        zIndex: 2
+                      }}
+                      aria-label="Select shader"
+                    />
+                  </div>
+                ),
+                action: () => loadShader(shader)
+              }))}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
