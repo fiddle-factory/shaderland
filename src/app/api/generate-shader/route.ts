@@ -6,6 +6,7 @@ import { generateText } from "ai";
 import { insertShader } from "../../../lib/db";
 import { Shader } from "@/lib/types";
 import { nanoid } from "../../../lib/nanoid";
+import { getClientIP, getLocationFromIP } from "@/lib/ip";
 
 interface ShaderRequest {
   prompt: string;
@@ -209,6 +210,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const ip = getClientIP(req);
+    const locationPromise = ip ? getLocationFromIP(ip) : null;
+
     let aiModel;
 
     switch (model) {
@@ -296,6 +300,8 @@ export async function POST(req: NextRequest) {
 
     const html = htmlMatch[1].trim();
 
+    const location = await locationPromise;
+
     // Insert shader into database
     const id = nanoid();
     const shader = {
@@ -308,6 +314,8 @@ export async function POST(req: NextRequest) {
       json: tweakpaneConfig,
       metadata: {
         prompt,
+        ip,
+        location,
       },
     };
     await insertShader(shader);
