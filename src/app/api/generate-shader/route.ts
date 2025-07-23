@@ -7,7 +7,10 @@ import { insertShader } from "../../db";
 
 interface ShaderRequest {
   prompt: string;
-  model?: "claude-3-5-sonnet-20241022" | "mistral-small-2503" | "gemini-2.0-flash-exp";
+  model?:
+    | "claude-3-5-sonnet-20241022"
+    | "mistral-small-2503"
+    | "gemini-2.0-flash-exp";
   creator_id: string;
   parent_id?: string;
   lineage_id?: string;
@@ -54,12 +57,28 @@ IMPORTANT: You must return your response in this EXACT format:
 - Update shader uniforms when receiving parameter changes
 - Example listener:
 \`\`\`javascript
-window.addEventListener('message', (event) => {
-  if (event.data.type === 'UPDATE_PARAMS') {
-    // Update shader uniforms with event.data.params
+// Listen for param updates
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'UPDATE_PARAMS') {
+    if (e.data.params.noise !== undefined) params.noise = e.data.params.noise;
+    if (e.data.params.speed !== undefined) params.speed = e.data.params.speed;
+    if (e.data.params.color1 !== undefined) params.color1 = e.data.params.color1;
+    if (e.data.params.color2 !== undefined) params.color2 = e.data.params.color2;
   }
 });
 \`\`\`
+- Make sure your example uses params that include: floats, and colors as hex strings, eg:
+\`\`\`javascript
+// Default params
+let params = {
+  noise: 0.2,
+  speed: 1.0,
+  color1: '#ff8000', // orange
+  color2: '#8000ff', // purple
+};
+\`\`\`
+- Note that the above params are examples - and the actual values will depend on the user's request. 
+- Don't always use the above colors, instead choose colors appropriate to the user's request.
 
 ### HTML Template:
 \`\`\`html
@@ -116,8 +135,13 @@ Generate the shader HTML and TweakPane config in the specified format!`;
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, model = "claude-3-5-sonnet-20241022", creator_id, parent_id, lineage_id }: ShaderRequest =
-      await req.json();
+    const {
+      prompt,
+      model = "claude-3-5-sonnet-20241022",
+      creator_id,
+      parent_id,
+      lineage_id,
+    }: ShaderRequest = await req.json();
 
     if (!prompt) {
       return NextResponse.json(
@@ -232,6 +256,9 @@ export async function POST(req: NextRequest) {
       parent_id,
       html,
       json: tweakpaneConfig,
+      metadata: {
+        prompt,
+      },
     });
 
     console.log("Shader saved to database with ID:", shaderId);

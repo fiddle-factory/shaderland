@@ -108,7 +108,7 @@ export default function Home() {
     if (!userId) return;
 
     try {
-      const response = await fetch(`/api/recent-shaders?userId=${userId}&limit=4`);
+      const response = await fetch(`/api/recent-shaders?limit=12`);
       if (response.ok) {
         const data = await response.json() as { shaders: RecentShader[] };
         setRecentShaders(data.shaders || []);
@@ -122,7 +122,7 @@ export default function Home() {
     console.log('Loading shader:', shader.id);
     console.log('Shader config type:', typeof shader.json);
     console.log('Shader config:', shader.json);
-    
+
     setShaderData({
       html: shader.html,
       config: shader.json
@@ -149,7 +149,7 @@ export default function Home() {
           shaderland
         </h1>
       </div>
-      <DebugControls/>
+      <DebugControls />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Removed input, button, and error display. Pass as props to ShaderPlayground. */}

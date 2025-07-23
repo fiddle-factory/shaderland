@@ -15,9 +15,8 @@ export function ShaderPreview({ html, onClick, className = '' }: ShaderPreviewPr
     if (iframeRef.current && html) {
       const iframe = iframeRef.current;
       
-      // Use data URL approach to avoid variable conflicts
-      const dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
-      iframe.src = dataUrl;
+      // Use srcdoc for better compatibility  
+      iframe.srcdoc = html;
     }
   }, [html]);
 

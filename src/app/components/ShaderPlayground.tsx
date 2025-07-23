@@ -231,13 +231,13 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
       Object.entries(controls as Record<string, ControlConfig>).forEach(([paramName, controlConfig]) => {
         try {
           const cfg = controlConfig as ControlConfig
-          
+
           // Validate that the control config has a valid value
           if (cfg.value === undefined || cfg.value === null) {
             console.warn(`Skipping control ${paramName} with invalid value:`, cfg.value);
             return;
           }
-          
+
           paramsRef.current[paramName] = cfg.value
 
           folder
@@ -280,10 +280,6 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
   useEffect(() => {
     if (!iframeRef.current || !effectiveHtml) return
 
-    // Create a blob URL for the HTML content
-    const blob = new Blob([effectiveHtml], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-
     setLoadError(false)
 
     const loadTimeout = setTimeout(() => {
@@ -306,12 +302,11 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
     iframeRef.current.addEventListener('load', handleLoad)
     iframeRef.current.addEventListener('error', handleError)
 
-    // Set the iframe src to the blob URL
-    iframeRef.current.src = url
+    // Use srcdoc instead of data URL for better compatibility
+    iframeRef.current.srcdoc = effectiveHtml
 
     return () => {
       clearTimeout(loadTimeout)
-      URL.revokeObjectURL(url)
       if (iframeRef.current) {
         iframeRef.current.removeEventListener('load', handleLoad)
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -322,31 +317,28 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
 
   const reloadShader = () => {
     if (iframeRef.current && effectiveHtml) {
-      const blob = new Blob([effectiveHtml], { type: 'text/html' })
-      const url = URL.createObjectURL(blob)
-      iframeRef.current.src = url
+      iframeRef.current.srcdoc = effectiveHtml
       setTimeout(() => {
-        URL.revokeObjectURL(url)
         sendParamsUpdate()
       }, 1000)
     }
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden"
-      initial={{ 
-        opacity: 0, 
-        y: 50, 
-        filter: 'blur(10px)' 
+      initial={{
+        opacity: 0,
+        y: 50,
+        filter: 'blur(10px)'
       }}
-      animate={{ 
-        opacity: 1, 
-        y: 0, 
-        filter: 'blur(0px)' 
+      animate={{
+        opacity: 1,
+        y: 0,
+        filter: 'blur(0px)'
       }}
-      transition={{ 
-        duration: 0.8, 
+      transition={{
+        duration: 0.8,
         ease: [0.25, 0.46, 0.45, 0.94],
         delay: 0.2
       }}
