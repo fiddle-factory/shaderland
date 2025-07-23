@@ -31,13 +31,45 @@ export function ShaderPreview({ html, onClick, className = '', index, hoveredInd
     );
   }
 
-  // Determine scale: 1.5 if hovered, 1.15 if neighbor, else 1
+  // Dock effect: scale and translate neighbors
   const safeHoveredIndex = hoveredIndex ?? null;
   let scale = 1;
+  let zIndex = 1;
+  let translateX = 0;
+  const SHIFT = 24; // px, how much to move immediate neighbors
+  const SHIFT2 = 12; // px, for second neighbors
+
   if (safeHoveredIndex !== null && typeof index === 'number') {
-    if (safeHoveredIndex === index) scale = 1.5;
-    else if (Math.abs(safeHoveredIndex - index) === 1) scale = 1.15;
+    if (safeHoveredIndex === index) {
+      scale = 1.5;
+      zIndex = 10;
+      translateX = 0;
+    } else if (safeHoveredIndex - index === 1) {
+      // immediate left neighbor
+      scale = 1.15;
+      zIndex = 3;
+      translateX = -SHIFT;
+    } else if (safeHoveredIndex - index === -1) {
+      // immediate right neighbor
+      scale = 1.15;
+      zIndex = 3;
+      translateX = SHIFT;
+    } else if (safeHoveredIndex - index === 2) {
+      // second left neighbor
+      translateX = -SHIFT2;
+    } else if (safeHoveredIndex - index === -2) {
+      // second right neighbor
+      translateX = SHIFT2;
+    }
   }
+
+  // Keyboard accessibility: trigger onClick with Enter/Space
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
 
   return (
     <motion.div
@@ -45,10 +77,14 @@ export function ShaderPreview({ html, onClick, className = '', index, hoveredInd
       onClick={onClick}
       onMouseEnter={() => setHoveredIndex && typeof index === 'number' && setHoveredIndex(index)}
       onMouseLeave={() => setHoveredIndex && setHoveredIndex(null)}
-      animate={{ scale, zIndex: safeHoveredIndex === index ? 10 : 1 }}
+      animate={{ scale, zIndex, x: translateX }}
       layout
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      style={{ zIndex: safeHoveredIndex === index ? 10 : 1 }}
+      style={{ zIndex, transformOrigin: 'bottom' }}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      role="button"
+      aria-label="Shader Preview"
     >
       <iframe
         ref={iframeRef}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import ShaderPlayground from './ShaderPlayground'
 import { DebugControls } from './DebugControls'
-import { ShaderPreview } from './ShaderPreview'
+import Dock from './Dock'
 import { useDebug } from '../contexts/DebugContext'
 import { useUserId } from '../contexts/UserIdContext'
 
@@ -17,14 +17,14 @@ export interface ControlConfig {
   label?: string
 }
 
-interface RecentShader {
+export interface RecentShader {
   id: string;
   created_at: string;
   creator_id: string;
   lineage_id: string;
   parent_id: string | null;
   html: string;
-  json: Record<string, Record<string, ControlConfig>>;
+  json: Record<string, Record<string, unknown>>;
   metadata: Record<string, unknown>;
 }
 
@@ -47,7 +47,6 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
   const [error, setError] = useState<string | null>(null)
   const [recentShaders, setRecentShaders] = useState<RecentShader[]>([])
   const [shareButtonState, setShareButtonState] = useState<'idle' | 'copied'>('idle')
-  const [hoveredPreviewIndex, setHoveredPreviewIndex] = useState<number | null>(null);
 
   // Get current shader ID from URL for sharing
   const getCurrentShaderId = () => {
@@ -155,7 +154,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
 
     setShaderData({
       html: shader.html,
-      config: shader.json
+      config: shader.json as Record<string, Record<string, ControlConfig>>
     });
 
     // Update URL with shallow routing to prevent reload
@@ -197,25 +196,26 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
             shareButtonState={shareButtonState}
           />
 
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Examples</h3>
-            <div className="flex overflow-x-auto gap-4 py-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-              {recentShaders.map((shader, idx) => (
-                <ShaderPreview
-                  key={shader.id}
-                  html={shader.html}
-                  onClick={() => loadShader(shader)}
-                  className=""
-                  index={idx}
-                  hoveredIndex={hoveredPreviewIndex}
-                  setHoveredIndex={setHoveredPreviewIndex}
-                />
-              ))}
-            </div>
-          </div>
         </div>
       </div>
       <DebugControls />
+      {/* Dock with shader previews */}
+      <div className = "App">
+        <Dock
+          items={recentShaders.map(shader => ({
+            icon: (
+              <div style={{ width: '100%', height: '100%', overflow: 'hidden', borderRadius: 8, background: '#222' }}>
+                <iframe
+                  srcDoc={shader.html}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  title="Shader Preview"
+                />
+              </div>
+            ),
+            action: () => loadShader(shader)
+          }))}
+        />
+      </div>
     </div>
   )
 }
