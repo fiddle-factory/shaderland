@@ -47,6 +47,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
   const [error, setError] = useState<string | null>(null)
   const [recentShaders, setRecentShaders] = useState<RecentShader[]>([])
   const [shareButtonState, setShareButtonState] = useState<'idle' | 'copied'>('idle')
+  const [hoveredPreviewIndex, setHoveredPreviewIndex] = useState<number | null>(null);
 
   // Get current shader ID from URL for sharing
   const getCurrentShaderId = () => {
@@ -197,14 +198,17 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
           />
 
           <div className="mt-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Recent Shaders</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Examples</h3>
             <div className="flex overflow-x-auto gap-4 py-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
-              {recentShaders.map((shader) => (
+              {recentShaders.map((shader, idx) => (
                 <ShaderPreview
                   key={shader.id}
                   html={shader.html}
                   onClick={() => loadShader(shader)}
                   className=""
+                  index={idx}
+                  hoveredIndex={hoveredPreviewIndex}
+                  setHoveredIndex={setHoveredPreviewIndex}
                 />
               ))}
             </div>

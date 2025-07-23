@@ -7,15 +7,17 @@ interface ShaderPreviewProps {
   html: string;
   onClick: () => void;
   className?: string;
+  index?: number;
+  hoveredIndex?: number | null;
+  setHoveredIndex?: (index: number | null) => void;
 }
 
-export function ShaderPreview({ html, onClick, className = '' }: ShaderPreviewProps) {
+export function ShaderPreview({ html, onClick, className = '', index, hoveredIndex, setHoveredIndex }: ShaderPreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (iframeRef.current && html) {
       const iframe = iframeRef.current;
-      
       // Use srcdoc for better compatibility  
       iframe.srcdoc = html;
     }
@@ -29,13 +31,24 @@ export function ShaderPreview({ html, onClick, className = '' }: ShaderPreviewPr
     );
   }
 
+  // Determine scale: 1.5 if hovered, 1.15 if neighbor, else 1
+  const safeHoveredIndex = hoveredIndex ?? null;
+  let scale = 1;
+  if (safeHoveredIndex !== null && typeof index === 'number') {
+    if (safeHoveredIndex === index) scale = 1.5;
+    else if (Math.abs(safeHoveredIndex - index) === 1) scale = 1.15;
+  }
+
   return (
     <motion.div
       className={`relative bg-gray-800 border border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors w-20 aspect-square ${className}`}
       onClick={onClick}
-      whileHover={{ scale: 1.5, zIndex: 10 }}
+      onMouseEnter={() => setHoveredIndex && typeof index === 'number' && setHoveredIndex(index)}
+      onMouseLeave={() => setHoveredIndex && setHoveredIndex(null)}
+      animate={{ scale, zIndex: safeHoveredIndex === index ? 10 : 1 }}
+      layout
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      style={{ zIndex: 1 }}
+      style={{ zIndex: safeHoveredIndex === index ? 10 : 1 }}
     >
       <iframe
         ref={iframeRef}
