@@ -23,7 +23,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
   const [recentShaders, setRecentShaders] = useState<Shader[]>([])
   const [shareButtonState, setShareButtonState] = useState<'idle' | 'copied'>('idle')
   const [showDock, setShowDock] = useState(true);
-  const [isRemixing, setIsRemixing] = useState(false)
+  const [isNewProject, setIsNewProject] = useState(false)
 
   // Get current shader ID from URL for sharing
   const getCurrentShaderId = () => {
@@ -58,17 +58,19 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
     const startTime = performance.now()
 
     try {
+      const requestBody = {
+        prompt,
+        model: selectedModel,
+        creator_id: userId,
+        parent_shader: !isNewProject && shaderData ? shaderData : undefined
+      };
+
       const response = await fetch('/api/generate-shader', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          prompt,
-          model: selectedModel,
-          creator_id: userId,
-          parent_shader: isRemixing && shaderData ? shaderData : undefined
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       const responseText = await response.text()
@@ -78,7 +80,6 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
         data = JSON.parse(responseText)
       } catch (parseError) {
         console.error('JSON Parse Error:', parseError)
-        console.log('Failed to parse:', responseText.substring(0, 500))
         throw new Error('Invalid JSON response from server')
       }
 
@@ -86,14 +87,13 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
         throw new Error(data.error || 'Failed to generate shader')
       }
 
-      console.log('Parsed data keys:', Object.keys(data))
-
       const endTime = performance.now()
       const timeTaken = Math.round(endTime - startTime)
 
-      console.log(`🚀 Request completed: ${timeTaken}ms using ${selectedModel}`)
-
       setShaderData(data)
+
+      // Reset New Project mode after successful generation
+      setIsNewProject(false)
 
       // Update URL to new shader with shallow routing (no reload)
       if (data.id) {
@@ -126,10 +126,6 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
   }, [userId]);
 
   const loadShader = (shader: Shader) => {
-    console.log('Loading shader:', shader.id);
-    console.log('Shader config type:', typeof shader.json);
-    console.log('Shader config:', shader.json);
-
     setShaderData(shader);
 
     // Update URL with shallow routing to prevent reload
@@ -169,8 +165,8 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
             error={error}
             onShare={handleShare}
             shareButtonState={shareButtonState}
-            isRemixing={isRemixing}
-            onToggleRemix={() => setIsRemixing(!isRemixing)}
+            isNewProject={isNewProject}
+            onToggleNewProject={() => setIsNewProject(!isNewProject)}
           />
 
         </div >

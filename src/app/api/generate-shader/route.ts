@@ -255,9 +255,11 @@ export async function POST(req: NextRequest) {
         );
     }
 
+    const finalPrompt = shaderPrompt(prompt, parent_shader);
+
     const result = await generateText({
       model: aiModel,
-      prompt: shaderPrompt(prompt, parent_shader),
+      prompt: finalPrompt,
       maxTokens: 4096,
     });
 
@@ -271,7 +273,6 @@ export async function POST(req: NextRequest) {
 
     if (!htmlMatch || !configMatch) {
       console.error("Failed to parse structured response");
-      console.log("Raw response:", result.text);
       return NextResponse.json(
         {
           error: "Invalid response format from AI model",
@@ -285,7 +286,6 @@ export async function POST(req: NextRequest) {
       tweakpaneConfig = JSON.parse(configMatch[1].trim());
     } catch (configError) {
       console.error("Failed to parse TweakPane config:", configError);
-      console.log("Config text:", configMatch[1]);
       return NextResponse.json(
         {
           error: "Invalid TweakPane configuration format",
@@ -295,11 +295,6 @@ export async function POST(req: NextRequest) {
     }
 
     const html = htmlMatch[1].trim();
-
-    console.log("=== PARSED RESPONSE ===");
-    console.log("HTML length:", html.length);
-    console.log("Config keys:", Object.keys(tweakpaneConfig));
-    console.log("=== END PARSED RESPONSE ===");
 
     // Insert shader into database
     const id = nanoid();
