@@ -18,3 +18,14 @@ export interface Shader {
   json: Record<string, Record<string, ControlConfig>> | null;
   metadata?: Record<string, unknown> | null;
 }
+
+export interface IPAPILocation {
+  country: string; // eg: United States
+  countryCode: string; // eg: US
+  region: string; // eg: CA
+  regionName: string; // eg: California
+  city: string; // eg: San Francisco
+  zip: string; // eg: 94188
+  lat: number; // eg: 37.7749
+  lon: number; // eg: -122.419
+}
