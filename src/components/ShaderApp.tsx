@@ -36,7 +36,7 @@ interface ShaderAppProps {
 }
 
 export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
-  const { selectedModel, debugMode } = useDebug()
+  const { selectedModel } = useDebug()
   const { userId } = useUserId()
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -162,10 +162,10 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
   };
 
   useEffect(() => {
-    if (debugMode && userId) {
+    if (userId) {
       fetchRecentShaders();
     }
-  }, [debugMode, userId, fetchRecentShaders]);
+  }, [userId, fetchRecentShaders]);
 
   useEffect(() => {
     if (shaderData) {
@@ -196,7 +196,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
             shareButtonState={shareButtonState}
           />
 
-          {debugMode && recentShaders.length > 0 && (
+          {recentShaders.length > 0 && (
             <div className="mt-6">
               <h3 className="text-lg font-semibold text-white mb-4">Recent Shaders</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
