@@ -398,7 +398,7 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
                   type="text"
                   value={prompt}
                   onChange={e => setPrompt(e.target.value)}
-                  placeholder="Describe the shader you want to create (e.g., 'a swirling galaxy with adjustable colors')"
+                  placeholder="Try: A swirling galaxy with adjustable colors"
                   className="flex-1 py-2 bg-transparent border-none outline-none text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   onKeyDown={e => e.key === 'Enter' && generateShader()}
                 />

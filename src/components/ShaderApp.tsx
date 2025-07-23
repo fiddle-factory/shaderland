@@ -196,21 +196,19 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
             shareButtonState={shareButtonState}
           />
 
-          {debugMode && recentShaders.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Recent Shaders</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {recentShaders.map((shader) => (
-                  <ShaderPreview
-                    key={shader.id}
-                    html={shader.html}
-                    onClick={() => loadShader(shader)}
-                    className="aspect-square"
-                  />
-                ))}
-              </div>
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Recent Shaders</h3>
+            <div className="flex overflow-x-auto gap-4 py-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+              {recentShaders.map((shader) => (
+                <ShaderPreview
+                  key={shader.id}
+                  html={shader.html}
+                  onClick={() => loadShader(shader)}
+                  className=""
+                />
+              ))}
             </div>
-          )}
+          </div>
         </div>
       </div>
       <DebugControls />
