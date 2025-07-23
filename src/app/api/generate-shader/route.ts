@@ -21,6 +21,43 @@ interface ShaderResponse {
   config: Record<string, unknown>;
 }
 
+const audioPrompt = `
+If the user asks you to build a shader that uses mic input, you should use navigator.mediaDevices.getUserMedia to get the audio stream. 
+Here's an example using audioLevel, but you can use it in other more complex manners too.
+
+// Initialize audio
+let audioContext;
+let analyser;
+let audioLevel = 0;
+
+async function setupAudio() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new AudioContext();
+        analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyser.fftSize = 256;
+    } catch (err) {
+        console.error('Mic access error:', err);
+    }
+}
+
+function getAudioLevel() {
+    if (!analyser) return 0;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(data);
+    const sum = data.reduce((a, b) => a + b, 0);
+    return sum / data.length / 255;
+}
+
+...
+
+setupAudio().then(() => {
+    requestAnimationFrame(render);
+});
+`;
+
 const shaderPrompt = (
   userPrompt: string
 ) => `You are an expert WebGL fragment shader programmer. Your task is to generate shader content based on the user's request.
@@ -79,6 +116,10 @@ let params = {
 \`\`\`
 - Note that the above params are examples - and the actual values will depend on the user's request. 
 - Don't always use the above colors, instead choose colors appropriate to the user's request.
+
+### Audio Input
+
+${audioPrompt}
 
 ### HTML Template:
 \`\`\`html
