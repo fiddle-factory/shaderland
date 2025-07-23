@@ -23,6 +23,8 @@ interface ShaderPlaygroundProps {
   isLoading: boolean
   generateShader: () => void
   error?: string | null
+  onShare?: () => void
+  shareButtonState?: 'idle' | 'copied'
 }
 
 // Default shader HTML (orange-purple noisy gradient)
@@ -195,7 +197,7 @@ const defaultControlsConfig = {
   },
 };
 
-export default function ShaderPlayground({ html, config, prompt, setPrompt, isLoading, generateShader, error }: ShaderPlaygroundProps) {
+export default function ShaderPlayground({ html, config, prompt, setPrompt, isLoading, generateShader, error, onShare, shareButtonState = 'idle' }: ShaderPlaygroundProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const controlsRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<Pane | null>(null)
@@ -424,6 +426,23 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
                 Controls
               </h4>
               <div ref={controlsRef} />
+              
+              {onShare && (
+                <div className="mt-4">
+                  <button
+                    onClick={onShare}
+                    disabled={shareButtonState !== 'idle'}
+                    className={`px-3 py-1.5 text-xs font-medium rounded transition-all duration-200 ${
+                      shareButtonState === 'copied' 
+                        ? 'bg-zinc-800 text-zinc-500 cursor-default opacity-60'
+                        : 'bg-zinc-700 hover:bg-zinc-600 text-white'
+                    }`}
+                  >
+                    {shareButtonState === 'copied' && '✓ Link copied'}
+                    {shareButtonState === 'idle' && 'Share'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

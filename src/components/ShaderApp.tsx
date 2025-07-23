@@ -46,6 +46,30 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
   } | null>(initialShaderData || null)
   const [error, setError] = useState<string | null>(null)
   const [recentShaders, setRecentShaders] = useState<RecentShader[]>([])
+  const [shareButtonState, setShareButtonState] = useState<'idle' | 'copied'>('idle')
+
+  // Get current shader ID from URL for sharing
+  const getCurrentShaderId = () => {
+    const match = window.location.pathname.match(/^\/s\/(.+)$/)
+    return match ? match[1] : null
+  }
+
+  const handleShare = async () => {
+    const shaderId = getCurrentShaderId()
+    if (!shaderId) {
+      return
+    }
+
+    try {
+      const shareUrl = `${window.location.origin}/s/${shaderId}`
+      await navigator.clipboard.writeText(shareUrl)
+      setShareButtonState('copied')
+      setTimeout(() => setShareButtonState('idle'), 800)
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error)
+      // Just silently fail, no error state
+    }
+  }
 
   const generateShader = async () => {
     if (!prompt.trim()) return
@@ -167,6 +191,8 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
             isLoading={isLoading}
             generateShader={generateShader}
             error={error}
+            onShare={handleShare}
+            shareButtonState={shareButtonState}
           />
 
           {debugMode && recentShaders.length > 0 && (
