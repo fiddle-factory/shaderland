@@ -4,6 +4,8 @@ import { createMistral } from "@ai-sdk/mistral";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 import { insertShader } from "../../../lib/db";
+import { Shader } from "@/lib/types";
+import { nanoid } from "../../../lib/nanoid";
 
 interface ShaderRequest {
   prompt: string;
@@ -12,13 +14,7 @@ interface ShaderRequest {
     | "mistral-small-2503"
     | "gemini-2.0-flash-exp";
   creator_id: string;
-  parent_id?: string;
-  lineage_id?: string;
-}
-
-interface ShaderResponse {
-  html: string;
-  config: Record<string, unknown>;
+  parent_shader?: Shader;
 }
 
 const audioPrompt = `
@@ -59,7 +55,8 @@ setupAudio().then(() => {
 `;
 
 const shaderPrompt = (
-  userPrompt: string
+  userPrompt: string,
+  parent_shader: Shader | undefined
 ) => `You are an expert WebGL fragment shader programmer. Your task is to generate shader content based on the user's request.
 
 IMPORTANT: You must return your response in this EXACT format:
@@ -169,6 +166,21 @@ Return a JSON object with this structure:
 }
 \`\`\`
 
+${
+  parent_shader
+    ? `
+## Existing Shader:
+The user has requested to remix the following shader, so base off it but add additional changes as required:
+
+### HTML:
+${parent_shader.html}
+
+### TweakPane Config:
+${JSON.stringify(parent_shader.json)}
+`
+    : ""
+}
+
 ## User Request: 
 ${userPrompt}
 
@@ -180,8 +192,7 @@ export async function POST(req: NextRequest) {
       prompt,
       model = "claude-3-5-sonnet-20241022",
       creator_id,
-      parent_id,
-      lineage_id,
+      parent_shader,
     }: ShaderRequest = await req.json();
 
     if (!prompt) {
@@ -246,7 +257,7 @@ export async function POST(req: NextRequest) {
 
     const result = await generateText({
       model: aiModel,
-      prompt: shaderPrompt(prompt),
+      prompt: shaderPrompt(prompt, parent_shader),
       maxTokens: 4096,
     });
 
@@ -291,24 +302,22 @@ export async function POST(req: NextRequest) {
     console.log("=== END PARSED RESPONSE ===");
 
     // Insert shader into database
-    const shaderId = await insertShader({
+    const id = nanoid();
+    const shader = {
+      id,
       creator_id,
-      lineage_id,
-      parent_id,
+      created_at: new Date(),
+      lineage_id: parent_shader?.lineage_id ?? id,
+      parent_id: parent_shader?.id ?? null,
       html,
       json: tweakpaneConfig,
       metadata: {
         prompt,
       },
-    });
+    };
+    await insertShader(shader);
 
-    console.log("Shader saved to database with ID:", shaderId);
-
-    return NextResponse.json({
-      id: shaderId,
-      html,
-      config: tweakpaneConfig,
-    } as ShaderResponse & { id: string });
+    return NextResponse.json(shader);
   } catch (error) {
     console.error("Shader generation error:", error);
     return NextResponse.json(

@@ -4,7 +4,7 @@ import DockItem from "./DockItem";
 import { DockButton } from "@/types";
 
 interface Props {
-  items: DockButton[];
+  items: DockButton[]
 }
 
 const Dock = ({ items }: Props) => {

@@ -1,5 +1,5 @@
 import { getShaderById } from '../../../lib/db'
-import ShaderApp, { ControlConfig } from '../../../components/ShaderApp'
+import ShaderApp from '../../../components/ShaderApp'
 import Link from 'next/link'
 
 interface PageProps {
@@ -24,10 +24,5 @@ export default async function ShaderPage({ params }: PageProps) {
     )
   }
 
-  const initialShaderData = {
-    html: shader.html || '',
-    config: shader.json as Record<string, Record<string, ControlConfig>>
-  }
-
-  return <ShaderApp initialShaderData={initialShaderData} />
+  return <ShaderApp initialShaderData={shader} />
 }

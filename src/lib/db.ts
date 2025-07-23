@@ -1,5 +1,5 @@
 import postgres from "postgres";
-import { nanoid } from "./nanoid";
+import { Shader } from "./types";
 
 const sql = postgres(process.env.PG_DB_STRING!);
 
@@ -19,17 +19,6 @@ CREATE TABLE public.shaders (
 );
 */
 
-export interface Shader {
-  id: string;
-  created_at: Date;
-  creator_id: string;
-  lineage_id: string;
-  parent_id: string | null;
-  html: string | null;
-  json: Record<string, unknown> | null;
-  metadata?: Record<string, unknown> | null;
-}
-
 export interface InsertShaderParams {
   creator_id: string;
   lineage_id?: string;
@@ -39,34 +28,32 @@ export interface InsertShaderParams {
   metadata?: Record<string, unknown>;
 }
 
-export async function insertShader(
-  params: InsertShaderParams
-): Promise<string> {
-  const id = nanoid();
-  const lineage_id = params.lineage_id || id;
-  const metadata = params.metadata || {};
+export async function insertShader(shader: Shader) {
+  const metadata = shader.metadata || {};
 
   await sql`
     INSERT INTO public.shaders (
       id,
       creator_id,
+      created_at,
       lineage_id,
       parent_id,
       html,
       json,
       metadata
     ) VALUES (
-      ${id},
-      ${params.creator_id},
-      ${lineage_id},
-      ${params.parent_id || null},
-      ${params.html},
-      ${JSON.stringify(params.json)},
+      ${shader.id},
+      ${shader.creator_id},
+      ${shader.created_at},
+      ${shader.lineage_id},
+      ${shader.parent_id || null},
+      ${shader.html},
+      ${JSON.stringify(shader.json)},
       ${JSON.stringify(metadata)}
     )
   `;
 
-  return id;
+  return shader;
 }
 
 export interface RecentRowsParams {

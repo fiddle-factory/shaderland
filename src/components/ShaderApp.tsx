@@ -6,33 +6,11 @@ import { DebugControls } from './DebugControls'
 import Dock from './Dock'
 import { useDebug } from '../contexts/DebugContext'
 import { useUserId } from '../contexts/UserIdContext'
+import { Shader } from '../lib/types'
 
-// Match the ControlConfig type from ShaderPlayground
-export interface ControlConfig {
-  value: number | number[] | string | string[]
-  min?: number
-  max?: number
-  step?: number
-  options?: unknown
-  label?: string
-}
-
-export interface RecentShader {
-  id: string;
-  created_at: string;
-  creator_id: string;
-  lineage_id: string;
-  parent_id: string | null;
-  html: string;
-  json: Record<string, Record<string, unknown>>;
-  metadata: Record<string, unknown>;
-}
 
 interface ShaderAppProps {
-  initialShaderData?: {
-    html: string
-    config?: Record<string, Record<string, ControlConfig>>
-  } | null
+  initialShaderData?: Shader | null
 }
 
 export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
@@ -40,14 +18,12 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
   const { userId } = useUserId()
   const [prompt, setPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [shaderData, setShaderData] = useState<{
-    html: string
-    config?: Record<string, Record<string, ControlConfig>>
-  } | null>(initialShaderData || null)
+  const [shaderData, setShaderData] = useState<Shader | null>(initialShaderData || null)
   const [error, setError] = useState<string | null>(null)
-  const [recentShaders, setRecentShaders] = useState<RecentShader[]>([])
+  const [recentShaders, setRecentShaders] = useState<Shader[]>([])
   const [shareButtonState, setShareButtonState] = useState<'idle' | 'copied'>('idle')
   const [showDock, setShowDock] = useState(true);
+  const [isRemixing, setIsRemixing] = useState(false)
 
   // Get current shader ID from URL for sharing
   const getCurrentShaderId = () => {
@@ -90,7 +66,8 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
         body: JSON.stringify({
           prompt,
           model: selectedModel,
-          creator_id: userId
+          creator_id: userId,
+          parent_shader: isRemixing && shaderData ? shaderData : undefined
         }),
       })
 
@@ -138,9 +115,9 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
     if (!userId) return;
 
     try {
-      const response = await fetch(`/api/recent-shaders?limit=30`);
+      const response = await fetch(`/api/recent-shaders?limit=15`);
       if (response.ok) {
-        const data = await response.json() as { shaders: RecentShader[] };
+        const data = await response.json() as { shaders: Shader[] };
         setRecentShaders(data.shaders || []);
       }
     } catch (error) {
@@ -148,15 +125,12 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
     }
   }, [userId]);
 
-  const loadShader = (shader: RecentShader) => {
+  const loadShader = (shader: Shader) => {
     console.log('Loading shader:', shader.id);
     console.log('Shader config type:', typeof shader.json);
     console.log('Shader config:', shader.json);
 
-    setShaderData({
-      html: shader.html,
-      config: shader.json as Record<string, Record<string, ControlConfig>>
-    });
+    setShaderData(shader);
 
     // Update URL with shallow routing to prevent reload
     window.history.pushState({}, '', `/s/${shader.id}`)
@@ -187,7 +161,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
         <div className="max-w-4xl mx-auto">
           <ShaderPlayground
             html={shaderData?.html ?? ''}
-            config={shaderData?.config}
+            config={shaderData?.json ?? {}}
             prompt={prompt}
             setPrompt={setPrompt}
             isLoading={isLoading}
@@ -195,10 +169,12 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
             error={error}
             onShare={handleShare}
             shareButtonState={shareButtonState}
+            isRemixing={isRemixing}
+            onToggleRemix={() => setIsRemixing(!isRemixing)}
           />
 
-        </div>
-      </div>
+        </div >
+      </div >
       <DebugControls />
       {/* Dock Notch and Dock at bottom */}
       <div style={{ position: 'fixed', left: 0, right: 0, bottom: 4, zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
@@ -226,7 +202,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
                 icon: (
                   <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', borderRadius: 8, background: 'transparent' }}>
                     <iframe
-                      srcDoc={shader.html}
+                      srcDoc={shader.html ?? ''}
                       style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'none' /* disables interaction until selected */ }}
                       title="Shader Preview"
                     />
@@ -252,6 +228,6 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
           </div>
         )}
       </div>
-    </div>
+    </div >
   )
 }

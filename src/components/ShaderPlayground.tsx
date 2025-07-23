@@ -25,6 +25,8 @@ interface ShaderPlaygroundProps {
   error?: string | null
   onShare?: () => void
   shareButtonState?: 'idle' | 'copied'
+  isRemixing?: boolean
+  onToggleRemix?: () => void
 }
 
 // Default shader HTML (orange-purple noisy gradient)
@@ -197,7 +199,7 @@ const defaultControlsConfig = {
   },
 };
 
-export default function ShaderPlayground({ html, config, prompt, setPrompt, isLoading, generateShader, error, onShare, shareButtonState = 'idle' }: ShaderPlaygroundProps) {
+export default function ShaderPlayground({ html, config, prompt, setPrompt, isLoading, generateShader, error, onShare, shareButtonState = 'idle', isRemixing = false, onToggleRemix }: ShaderPlaygroundProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const controlsRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<Pane | null>(null)
@@ -427,19 +429,32 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
               </h4>
               <div ref={controlsRef} />
 
-              {onShare && (
-                <div className="mt-4">
-                  <button
-                    onClick={onShare}
-                    disabled={shareButtonState !== 'idle'}
-                    className={`px-3 py-1.5 text-xs font-medium rounded transition-all duration-200 ${shareButtonState === 'copied'
-                      ? 'bg-zinc-800 text-zinc-500 cursor-default opacity-60'
-                      : 'bg-zinc-700 hover:bg-zinc-600 text-white'
-                      }`}
-                  >
-                    {shareButtonState === 'copied' && '✓ Link copied'}
-                    {shareButtonState === 'idle' && 'Share'}
-                  </button>
+              {(onShare || onToggleRemix) && (
+                <div className="mt-4 flex gap-2">
+                  {onToggleRemix && (
+                    <button
+                      onClick={onToggleRemix}
+                      className={`px-3 py-1.5 text-xs font-medium rounded transition-all duration-200 ${isRemixing
+                        ? 'bg-green-700 hover:bg-green-600 text-white'
+                        : 'bg-zinc-700 hover:bg-zinc-600 text-white'
+                        }`}
+                    >
+                      {isRemixing ? '✓ Remixing' : 'Remix'}
+                    </button>
+                  )}
+                  {onShare && (
+                    <button
+                      onClick={onShare}
+                      disabled={shareButtonState !== 'idle'}
+                      className={`px-3 py-1.5 text-xs font-medium rounded transition-all duration-200 ${shareButtonState === 'copied'
+                        ? 'bg-zinc-800 text-zinc-500 cursor-default opacity-60'
+                        : 'bg-zinc-700 hover:bg-zinc-600 text-white'
+                        }`}
+                    >
+                      {shareButtonState === 'copied' && '✓ Link copied'}
+                      {shareButtonState === 'idle' && 'Share'}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
