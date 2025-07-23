@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import ShaderPlayground from './ShaderPlayground'
 import { DebugControls } from './DebugControls'
-import { ShaderPreview } from './ShaderPreview'
+import Dock from './Dock'
 import { useDebug } from '../contexts/DebugContext'
 import { useUserId } from '../contexts/UserIdContext'
 
@@ -17,14 +17,14 @@ export interface ControlConfig {
   label?: string
 }
 
-interface RecentShader {
+export interface RecentShader {
   id: string;
   created_at: string;
   creator_id: string;
   lineage_id: string;
   parent_id: string | null;
   html: string;
-  json: Record<string, Record<string, ControlConfig>>;
+  json: Record<string, Record<string, unknown>>;
   metadata: Record<string, unknown>;
 }
 
@@ -47,6 +47,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
   const [error, setError] = useState<string | null>(null)
   const [recentShaders, setRecentShaders] = useState<RecentShader[]>([])
   const [shareButtonState, setShareButtonState] = useState<'idle' | 'copied'>('idle')
+  const [showDock, setShowDock] = useState(true);
 
   // Get current shader ID from URL for sharing
   const getCurrentShaderId = () => {
@@ -137,7 +138,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
     if (!userId) return;
 
     try {
-      const response = await fetch(`/api/recent-shaders?limit=12`);
+      const response = await fetch(`/api/recent-shaders?limit=30`);
       if (response.ok) {
         const data = await response.json() as { shaders: RecentShader[] };
         setRecentShaders(data.shaders || []);
@@ -154,7 +155,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
 
     setShaderData({
       html: shader.html,
-      config: shader.json
+      config: shader.json as Record<string, Record<string, ControlConfig>>
     });
 
     // Update URL with shallow routing to prevent reload
@@ -196,24 +197,61 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
             shareButtonState={shareButtonState}
           />
 
-          {recentShaders.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Recent Shaders</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {recentShaders.map((shader) => (
-                  <ShaderPreview
-                    key={shader.id}
-                    html={shader.html}
-                    onClick={() => loadShader(shader)}
-                    className="aspect-square"
-                  />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
       <DebugControls />
+      {/* Dock Notch and Dock at bottom */}
+      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 4, zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
+        {/* Notch */}
+        <div
+          onClick={() => setShowDock(v => !v)}
+          style={{
+            width: 20,
+            height: 4,
+            borderRadius: 4,
+            background: '#fffff19',
+            marginBottom: showDock ? 2 : 0,
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+            transition: 'background 0.2s',
+            opacity: 0.8
+          }}
+          title={showDock ? 'Hide dock' : 'Show dock'}
+        />
+        {/* Dock */}
+        {showDock && (
+          <div className="App" style={{ pointerEvents: 'auto' }}>
+            <Dock
+              items={recentShaders.map(shader => ({
+                icon: (
+                  <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', borderRadius: 8, background: 'transparent' }}>
+                    <iframe
+                      srcDoc={shader.html}
+                      style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'none' /* disables interaction until selected */ }}
+                      title="Shader Preview"
+                    />
+                    <button
+                      onClick={() => loadShader(shader)}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        zIndex: 2
+                      }}
+                      aria-label="Select shader"
+                    />
+                  </div>
+                ),
+                action: () => loadShader(shader)
+              }))}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

@@ -48,3 +48,53 @@ body {
   --tp-monitor-background-color: hsla(0, 0%, 0%, 0.3);
   --tp-monitor-foreground-color: hsla(0, 0%, 100%, 0.3);
 }
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+.App {
+  font-family: sans-serif;
+  text-align: center;
+  margin-top: 8px;
+}
+
+.dock {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 8px;
+  height: 66px;
+  background-color: #00000019;
+  border: 1px solid #3b3b3b19;
+  padding: 8px;
+  border-radius: 16px;
+  margin: 0 auto;
+  display: inline-flex;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+}
+
+.dock-item {
+  background-color: #f2f2f2;
+  border-radius: 12px;
+  text-align: center;
+  color: #000;
+  outline: 0;
+  border: 0px solid transparent;
+  display: block;
+  cursor: pointer;
+  padding: 0px;
+}
+
+.dock-item svg {
+  width: 50%;
+  height: 50%;
+  display: block;
+  margin: 0 auto;
+}
