@@ -1,5 +1,5 @@
-import postgres from 'postgres';
-import { nanoid } from 'nanoid';
+import postgres from "postgres";
+import { nanoid } from "./nanoid";
 
 const sql = postgres(process.env.PG_DB_STRING!);
 
@@ -27,7 +27,7 @@ export interface Shader {
   parent_id: string | null;
   html: string | null;
   json: Record<string, unknown> | null;
-  metadata: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface InsertShaderParams {
@@ -39,8 +39,10 @@ export interface InsertShaderParams {
   metadata?: Record<string, unknown>;
 }
 
-export async function insertShader(params: InsertShaderParams): Promise<string> {
-  const id = nanoid(15);
+export async function insertShader(
+  params: InsertShaderParams
+): Promise<string> {
+  const id = nanoid();
   const lineage_id = params.lineage_id || id;
   const metadata = params.metadata || {};
 
@@ -72,9 +74,11 @@ export interface RecentRowsParams {
   limit?: number;
 }
 
-export async function recentRows(params: RecentRowsParams = {}): Promise<Shader[]> {
+export async function recentRows(
+  params: RecentRowsParams = {}
+): Promise<Shader[]> {
   const limit = params.limit || 5;
-  
+
   let rows;
   if (params.userId) {
     rows = await sql`
@@ -94,9 +98,36 @@ export async function recentRows(params: RecentRowsParams = {}): Promise<Shader[
   }
 
   // Ensure JSON fields are properly parsed
-  return rows.map(row => ({
+  return rows.map((row) => ({
     ...row,
-    json: typeof row.json === 'string' ? JSON.parse(row.json) : row.json,
-    metadata: typeof row.metadata === 'string' ? JSON.parse(row.metadata) : row.metadata
-  }));
+    json: typeof row.json === "string" ? JSON.parse(row.json) : row.json,
+    metadata:
+      typeof row.metadata === "string"
+        ? JSON.parse(row.metadata)
+        : row.metadata,
+  })) as Shader[];
+}
+
+export async function getShaderById(id: string): Promise<Shader | null> {
+  const shaders = await sql`
+    SELECT id, created_at, creator_id, lineage_id, parent_id, html, json, metadata
+    FROM public.shaders
+    WHERE id = ${id}
+  `;
+
+  if (!shaders || shaders.length === 0) {
+    return null;
+  }
+
+  const shader = shaders[0] as Shader;
+
+  return {
+    ...shader,
+    json:
+      typeof shader.json === "string" ? JSON.parse(shader.json) : shader.json,
+    metadata:
+      typeof shader.metadata === "string"
+        ? JSON.parse(shader.metadata)
+        : shader.metadata,
+  } as Shader;
 }

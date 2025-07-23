@@ -3,7 +3,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createMistral } from "@ai-sdk/mistral";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
-import { insertShader } from "../../db";
+import { insertShader } from "../../../lib/db";
 
 interface ShaderRequest {
   prompt: string;
@@ -264,9 +264,10 @@ export async function POST(req: NextRequest) {
     console.log("Shader saved to database with ID:", shaderId);
 
     return NextResponse.json({
+      id: shaderId,
       html,
       config: tweakpaneConfig,
-    } as ShaderResponse);
+    } as ShaderResponse & { id: string });
   } catch (error) {
     console.error("Shader generation error:", error);
     return NextResponse.json(

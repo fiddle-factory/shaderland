@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { nanoid } from 'nanoid';
+import { nanoid } from '../lib/nanoid';
 
 interface UserIdContextType {
   userId: string;
@@ -14,11 +14,11 @@ export function UserIdProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const savedUserId = localStorage.getItem('userId');
-    
+
     if (savedUserId) {
       setUserId(savedUserId);
     } else {
-      const newUserId = nanoid(15);
+      const newUserId = nanoid();
       setUserId(newUserId);
       localStorage.setItem('userId', newUserId);
     }
