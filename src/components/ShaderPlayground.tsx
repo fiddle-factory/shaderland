@@ -381,7 +381,7 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
             <iframe
               ref={iframeRef}
               className="w-full h-full border-none rounded"
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
               referrerPolicy="no-referrer"
               title="Shader Preview"
             />
