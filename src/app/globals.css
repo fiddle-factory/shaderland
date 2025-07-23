@@ -62,7 +62,7 @@ html {
 .App {
   font-family: sans-serif;
   text-align: center;
-  margin-top: 64px;
+  margin-top: 8px;
 }
 
 .dock {
@@ -71,8 +71,8 @@ html {
   align-items: flex-end;
   gap: 8px;
   height: 66px;
-  background-color: #ffffff19;
-  border: 1px solid #eeeeee19;
+  background-color: #00000019;
+  border: 1px solid #3b3b3b19;
   padding: 8px;
   border-radius: 16px;
   margin: 0 auto;

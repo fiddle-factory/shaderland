@@ -201,18 +201,17 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
       </div>
       <DebugControls />
       {/* Dock Notch and Dock at bottom */}
-      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 24, zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
+      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 4, zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
         {/* Notch */}
         <div
           onClick={() => setShowDock(v => !v)}
           style={{
-            width: 48,
-            height: 8,
+            width: 20,
+            height: 4,
             borderRadius: 4,
-            background: '#888',
-            marginBottom: showDock ? 8 : 0,
+            background: '#fffff19',
+            marginBottom: showDock ? 2 : 0,
             cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
             pointerEvents: 'auto',
             transition: 'background 0.2s',
             opacity: 0.8
