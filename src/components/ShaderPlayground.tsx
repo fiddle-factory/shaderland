@@ -399,9 +399,10 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
                   type="text"
                   value={prompt}
                   onChange={e => setPrompt(e.target.value)}
-                  placeholder="Try: A swirling galaxy with adjustable colors"
-                  className="flex-1 py-2 bg-transparent border-none outline-none text-gray-900 dark:text-white text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                  onKeyDown={e => e.key === 'Enter' && generateShader()}
+                  placeholder={isLoading ? "Generating shader..." : "Try: A swirling galaxy with adjustable colors"}
+                  disabled={isLoading}
+                  className={`flex-1 py-2 bg-transparent border-none outline-none text-gray-900 dark:text-white text-sm placeholder:text-gray-300 dark:placeholder:text-gray-500 ${isLoading ? 'animate-pulse' : ''}`}
+                  onKeyDown={e => e.key === 'Enter' && !isLoading && generateShader()}
                 />
                 {prompt.trim() && (
                   <button
