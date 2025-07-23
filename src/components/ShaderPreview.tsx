@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 
 interface ShaderPreviewProps {
   html: string;
@@ -29,9 +30,12 @@ export function ShaderPreview({ html, onClick, className = '' }: ShaderPreviewPr
   }
 
   return (
-    <div 
-      className={`relative bg-gray-800 border border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors ${className}`}
+    <motion.div
+      className={`relative bg-gray-800 border border-gray-600 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500 transition-colors w-20 aspect-square ${className}`}
       onClick={onClick}
+      whileHover={{ scale: 1.5, zIndex: 10 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      style={{ zIndex: 1 }}
     >
       <iframe
         ref={iframeRef}
@@ -40,6 +44,6 @@ export function ShaderPreview({ html, onClick, className = '' }: ShaderPreviewPr
         title="Shader Preview"
       />
       <div className="absolute inset-0 hover:bg-blue-500/10 transition-colors" />
-    </div>
+    </motion.div>
   );
 }
