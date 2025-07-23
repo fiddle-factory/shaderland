@@ -3,11 +3,12 @@ import ShaderApp, { ControlConfig } from '../../../components/ShaderApp'
 import Link from 'next/link'
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function ShaderPage({ params }: PageProps) {
-  const shader = await getShaderById(params.id)
+  const { id } = await params
+  const shader = await getShaderById(id)
 
   if (!shader) {
     return (

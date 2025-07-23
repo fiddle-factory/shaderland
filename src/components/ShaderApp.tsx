@@ -60,6 +60,7 @@ export default function ShaderApp({ initialShaderData }: ShaderAppProps) {
       return
     }
 
+    // fallback to clipboard
     try {
       const shareUrl = `${window.location.origin}/s/${shaderId}`
       await navigator.clipboard.writeText(shareUrl)

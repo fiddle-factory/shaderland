@@ -381,7 +381,7 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
             <iframe
               ref={iframeRef}
               className="w-full h-full border-none rounded"
-              sandbox="allow-scripts allow-same-origin"
+              sandbox="allow-scripts"
               referrerPolicy="no-referrer"
               title="Shader Preview"
             />
@@ -426,17 +426,16 @@ export default function ShaderPlayground({ html, config, prompt, setPrompt, isLo
                 Controls
               </h4>
               <div ref={controlsRef} />
-              
+
               {onShare && (
                 <div className="mt-4">
                   <button
                     onClick={onShare}
                     disabled={shareButtonState !== 'idle'}
-                    className={`px-3 py-1.5 text-xs font-medium rounded transition-all duration-200 ${
-                      shareButtonState === 'copied' 
-                        ? 'bg-zinc-800 text-zinc-500 cursor-default opacity-60'
-                        : 'bg-zinc-700 hover:bg-zinc-600 text-white'
-                    }`}
+                    className={`px-3 py-1.5 text-xs font-medium rounded transition-all duration-200 ${shareButtonState === 'copied'
+                      ? 'bg-zinc-800 text-zinc-500 cursor-default opacity-60'
+                      : 'bg-zinc-700 hover:bg-zinc-600 text-white'
+                      }`}
                   >
                     {shareButtonState === 'copied' && '✓ Link copied'}
                     {shareButtonState === 'idle' && 'Share'}
